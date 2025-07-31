@@ -1,6 +1,8 @@
 # Aiboo – AI Agent for Android 🤖
 
-**Aiboo** is a Kotlin-based Android AI agent that can understand natural language commands and perform tasks on your device. It is powered by **Google Gemini**, uses **Lottie** for futuristic animations, and **Prexocore** to simplify Android development.
+**Aiboo** is a Kotlin-based Android AI agent that can understand natural language commands and perform tasks on your device. It is powered by **Google Gemini**, uses **Lottie** for futuristic animations, and **[Prexocore](https://github.com/binarybeam/Prexocore)** to simplify Android development and reduce boilerplate code.
+
+> **Prexocore** is a utility library for Android that powers Aiboo's background operations, including permission handling, view interactions, file operations, and system actions.
 
 ---
 
@@ -28,7 +30,14 @@ Aiboo can perform these tasks in the background after understanding your query:
 * **Input:** Voice or text query
 * **Agent Layer:** Aiboo interprets your intent and required details
 * **Task Execution:** Action is performed on the device silently in the background
-* **Feedback:** Only the `message` (short status) is shown to the user with Lottie animations; task executes in the background
+* **Feedback:** Only the `message` (short status) is shown to the user with Lottie animations
+* **Utility Backbone:** [**Prexocore**](https://github.com/binarybeam/Prexocore) handles:
+
+  * Permission requests & checks
+  * View operations (show/hide/focus)
+  * File IO & screen capture
+  * Navigation & alerts
+  * Background task helpers like `after()` and speech synthesis
 
 ---
 
@@ -64,19 +73,19 @@ When you speak or type a command, Aiboo shows a **short message** on screen and 
 
 * **Query:** "Order a veg pizza under 200"
 * **Message shown:** "Ordering your food... 🍕"
-* **Task:** Food ordering link opens in background WebView.
+* **Task:** Food ordering page opens silently in the background.
 
 ### Ride Booking
 
 * **Query:** "Book an auto from Jayanagar to Indiranagar"
 * **Message shown:** "Booking your ride... 🛺"
-* **Task:** Opens ride booking page in background.
+* **Task:** Ride booking page opens in background.
 
 ### Setting Reminder
 
 * **Query:** "Remind me tomorrow at 7 AM to workout"
 * **Message shown:** "Setting reminder... ⏰"
-* **Task:** Reminder scheduled using AlarmManager.
+* **Task:** Reminder scheduled via AlarmManager.
 
 ### Quick Action
 
@@ -90,7 +99,7 @@ When you speak or type a command, Aiboo shows a **short message** on screen and 
 * **Message shown:** "Deleting files... 🗑️"
 * **Task:** Files deleted in background.
 
-> Every task triggers a short on-screen message, while the actual action happens in the background.
+> Every task triggers a short on-screen message while the action runs silently.
 
 ---
 
@@ -126,4 +135,4 @@ Aiboo requests permissions only when required:
 
 Open-source under the **Apache-2.0 License**.
 
-> **Aiboo** – Speak, and let your phone do everything else in the background ✨
+> **Aiboo** – Powered by [**Prexocore**](https://github.com/binarybeam/Prexocore), speak and let your Android do the rest in the background ✨
