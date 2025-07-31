@@ -1,0 +1,37 @@
+[versions]
+agp = "8.11.1"
+appcompat = "1.7.1"
+constraintlayout = "2.2.1"
+coreKtx = "1.16.0"
+espressoCore = "3.6.1"
+generativeai = "0.9.0"
+glide = "4.16.0"
+html = "4.6.2"
+junitVersion = "1.2.1"
+kotlin = "2.0.21"
+junit = "4.13.2"
+lottie = "6.6.7"
+material = "1.12.0"
+activity = "1.10.1"
+cardview = "1.0.0"
+
+[libraries]
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+core = { module = "io.noties.markwon:core", version.ref = "html" }
+core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
+ext-junit = { module = "androidx.test.ext:junit", version.ref = "junitVersion" }
+generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+html = { module = "io.noties.markwon:html", version.ref = "html" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
