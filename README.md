@@ -1,4 +1,4 @@
-# Aiboo – AI Agent for Android 🤖
+# Aiboo – AI Agent for Android
 
 **Aiboo** is a Kotlin-based Android AI agent that can understand natural language commands and perform tasks on your device. It is powered by **Google Gemini**, and **[Prexocore](https://github.com/binarybeam/Prexocore)** to simplify Android development and reduce boilerplate code.
 [Download APK](https://github.com/binarybeam/Aiboo/releases/download/1.0.0/aiboo.apk)
