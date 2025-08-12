@@ -66,6 +66,9 @@ import java.util.Date
 import java.util.Locale
 import androidx.core.view.isGone
 import com.google.ai.client.generativeai.type.ImagePart
+import com.google.ai.client.generativeai.type.Part
+import com.prexoft.prexoai.Ai
+import com.prexoft.prexoai.AiCallback
 import com.prexoft.prexocore.Permission
 import com.prexoft.prexocore.after
 import com.prexoft.prexocore.alert
@@ -74,13 +77,15 @@ import com.prexoft.prexocore.copy
 import com.prexoft.prexocore.distract
 import com.prexoft.prexocore.focus
 import com.prexoft.prexocore.formatAsTime
+import com.prexoft.prexocore.getApps
 import com.prexoft.prexocore.getPermission
 import com.prexoft.prexocore.goTo
 import com.prexoft.prexocore.havePermission
+import com.prexoft.prexocore.helper.observeNetworkStatus
 import com.prexoft.prexocore.hide
 import com.prexoft.prexocore.input
+import com.prexoft.prexocore.listenSpeech
 import com.prexoft.prexocore.now
-import com.prexoft.prexocore.observeNetworkStatus
 import com.prexoft.prexocore.onClick
 import com.prexoft.prexocore.onLongClick
 import com.prexoft.prexocore.onSafeClick
@@ -100,17 +105,15 @@ import org.json.JSONArray
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var speechRecognizer: SpeechRecognizer
     private var isAutoReadEnabled = true
-    private var chatHistory = mutableListOf<Content>()
     private var pendingFormData: JSONObject? = null
     private var imageCapture: ImageCapture? = null
     private var photoFile: File? = null
     private var capturedImageUri: Uri? = null
     private var tweetFilled = false
     private var passwordPromptShown = false
-    private var model: GenerativeModel? = null
     private lateinit var permission: Permission
+    private val ai by lazy { Ai() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,7 +123,6 @@ class MainActivity : AppCompatActivity() {
 
         setupBackNavigation()
         setupModel()
-        setupSpeechRecognizer()
         enableEdgeToEdge()
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
@@ -155,7 +157,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding.clear.onClick { chatHistory.clear() }
+        binding.clear.onClick {
+            goTo(MainActivity::class)
+            finish()
+        }
         binding.geminiResponseText.onLongClick { copy(binding.geminiResponseText.text.toString()) }
 
         binding.cardView.onClick {
@@ -169,67 +174,18 @@ class MainActivity : AppCompatActivity() {
                 binding.scroller.smoothScrollTo(-1, -1)
             }
 
-            if (binding.lottieAnimationView.isAnimating) speechRecognizer.stopListening()
             else if (havePermission(Manifest.permission.RECORD_AUDIO)) startListening()
             else {
                 permission.request(Manifest.permission.RECORD_AUDIO) { permitted ->
                     if (permitted) startListening()
-                    else alert("Permission denied", "Microphone permission is required to use this feature.")
+                    else alert("Permission denied", "Microphone permission is required to use this feature.", fontFamily = R.font.outfit)
                 }
             }
         }
 
         observeNetworkStatus(this) {
-            if (!it) alert("Connection failed!", "Please check to wifi or stable internet connection to use this app")
+            if (!it) alert("Connection failed!", "Please check to wifi or stable internet connection to use this app", fontFamily = R.font.outfit)
         }
-    }
-
-    private fun setupSpeechRecognizer() {
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        speechRecognizer.setRecognitionListener(object : android.speech.RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { }
-            
-            override fun onBeginningOfSpeech() { }
-            
-            override fun onRmsChanged(rmsdB: Float) { }
-            
-            override fun onBufferReceived(buffer: ByteArray?) { }
-
-            override fun onEndOfSpeech() {
-                binding.lottieAnimationView.pauseAnimation()
-                binding.lottieAnimationView2.pauseAnimation()
-            }
-            
-            override fun onError(error: Int) {
-                val errorMessage = when (error) {
-                    SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
-                    SpeechRecognizer.ERROR_CLIENT -> "Client side error"
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
-                    SpeechRecognizer.ERROR_NETWORK -> "Network error"
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-                    SpeechRecognizer.ERROR_NO_MATCH -> "No speech match"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
-                    SpeechRecognizer.ERROR_SERVER -> "Server error"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout"
-                    else -> "Unknown error"
-                }
-                binding.lottieAnimationView.pauseAnimation()
-                binding.lottieAnimationView2.pauseAnimation()
-                toast(errorMessage)
-            }
-            
-            override fun onResults(results: Bundle?) {
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (!matches.isNullOrEmpty()) {
-                    val spokenText = matches[0]
-                    getGeminiResponse(spokenText)
-                }
-            }
-            
-            override fun onPartialResults(partialResults: Bundle?) { }
-            
-            override fun onEvent(eventType: Int, params: Bundle?) { }
-        })
     }
 
     private fun setupModel() {
@@ -237,9 +193,9 @@ class MainActivity : AppCompatActivity() {
         val model = readInternalFile("model.txt")
 
         if (key.isBlank()) {
-            input("Enter Gemini API key", "Get it from aistudio.google.com", "Ai...", required = true) { key->
-                input("Enter Gemini model", "Leave it empty to use default", "gemini-2.5-flash-lite") {
-                    alert("Credentials saved locally", "To change configuration, clear data or reinstall the app.", "Okay")
+            input("Enter Gemini API key", "Get it from aistudio.google.com", "Ai...", required = true, fontFamily = R.font.outfit) { key->
+                input("Enter Gemini model", "Leave it empty to use default", "gemini-2.5-flash-lite", fontFamily = R.font.outfit) {
+                    alert("Credentials saved locally", "To change configuration, clear data or reinstall the app.", "Okay", fontFamily = R.font.outfit)
                     modelInit(
                         key.writeInternalFile(this, "key.txt"),
                         model.writeInternalFile(this, "model.txt")
@@ -251,16 +207,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun modelInit(key: String, modelName: String) {
-        model = GenerativeModel(
-            modelName = modelName.ifBlank { "gemini-2.5-flash-lite" },
+        ai.updateModel(
             apiKey = key,
-            systemInstruction = Content(role = "system", listOf(TextPart(systemPrompt))),
-            safetySettings = listOf(
-                SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.NONE),
-                SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.NONE),
-            )
+            customAgenticMessage = systemPrompt
         )
     }
     
@@ -315,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                 blockNetworkImage = false
                 blockNetworkLoads = false
             }
-            
+
             addJavascriptInterface(object {
                 @SuppressLint("SetTextI18s", "SetTextI18n")
                 @android.webkit.JavascriptInterface
@@ -383,7 +332,7 @@ class MainActivity : AppCompatActivity() {
                 fun handleCheckout() {
                     Handler(mainLooper).post {
                         binding.progress.text = "Processing checkout..."
-                        
+
                         val checkListItemJs = """
                             (function checkListItem() {
                                 const listItem = document.querySelector('div[role="list"]._34m_P');
@@ -414,7 +363,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             })();
                         """.trimIndent()
-                        
+
                         binding.webView.evaluateJavascript(checkListItemJs, null)
                     }
                 }
@@ -745,18 +694,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }, "androidInterface")
-            
+
             webViewClient = object : WebViewClient() {
                 @SuppressLint("SetTextI18s", "SetTextI18n")
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)                    
-                    
+                    super.onPageFinished(view, url)
+
                     when (pendingFormData?.getString("id")) {
                         "tweet" -> {
                             if (url!!.startsWith("https://x.com/i/flow/login")) {
                                 tweetFilled = false
                                 passwordPromptShown = false
-                                
+
                                 val watchPasswordJs = """
                                     (function() {
                                         if (window._passwordWatcherActive) return;
@@ -782,7 +731,7 @@ class MainActivity : AppCompatActivity() {
                                     })();
                                 """.trimIndent()
                                 view?.evaluateJavascript(watchPasswordJs, null)
-                                
+
                                 input("Enter your username, phone or email", required = true) { loginValue ->
                                     if (loginValue.isNotEmpty()) {
                                         val fillLoginJs = """
@@ -1183,7 +1132,7 @@ class MainActivity : AppCompatActivity() {
                                     setTimeout(waitForResults, 2000);
                                 })();
                             """.trimIndent()
-                            
+
                             view?.evaluateJavascript(clickDishesButtonJs) { result ->
                                 android.util.Log.d("WebView", "Dishes button click result: $result")
                             }
@@ -1195,13 +1144,13 @@ class MainActivity : AppCompatActivity() {
                                     return phoneInput != null;
                                 })();
                             """.trimIndent()
-                            
+
                             view?.evaluateJavascript(checkPhoneInputJs) { result ->
                                 val hasPhoneInput = result.equals("true", ignoreCase = true)
-                                
+
                                 if (hasPhoneInput) {
                                     binding.progress.text = "Please enter your phone number..."
-                                    
+
                                     runOnUiThread {
                                         input("Enter your phone number", required = true) { phoneNumber ->
                                             if (phoneNumber.length == 10 && phoneNumber.all { it.isDigit() }) {
@@ -1547,14 +1496,18 @@ class MainActivity : AppCompatActivity() {
     """.trimIndent()
 
     private fun startListening() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
-        }
         binding.lottieAnimationView.playAnimation()
         binding.lottieAnimationView2.playAnimation()
-        speechRecognizer.startListening(intent)
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        listenSpeech { detectedSpeech->
+            binding.lottieAnimationView.pauseAnimation()
+            binding.lottieAnimationView2.pauseAnimation()
+
+            if (detectedSpeech.isNotBlank()) getGeminiResponse(detectedSpeech)
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -2060,11 +2013,11 @@ class MainActivity : AppCompatActivity() {
     private fun fetchApp(platform: String): String {
         val apps = getApps()
         for (a in apps) {
-            if (a.value.lowercase() == platform.lowercase()) return a.key
+            if (a.appName.lowercase() == platform.lowercase()) return a.packageName
         }
 
         for (a in apps) {
-            if (a.value.lowercase().contains(platform.lowercase())) return a.key
+            if (a.appName.lowercase().contains(platform.lowercase())) return a.packageName
         }
 
         toast("No app found with name: $platform")
@@ -2082,18 +2035,6 @@ class MainActivity : AppCompatActivity() {
             toast("No contact found with name: $contact")
             return ""
         }
-    }
-
-    private fun getApps(): HashMap<String, String> {
-        val appsMap = HashMap<String, String>()
-        val applications = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-
-        for (appInfo in applications) {
-            val packageName = appInfo.packageName
-            val appName = packageManager.getApplicationLabel(appInfo).toString()
-            appsMap[packageName] = appName
-        }
-        return appsMap
     }
 
     private fun getContacts(): HashMap<String, String> {
@@ -2145,73 +2086,51 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18s", "SetTextI18n")
     private fun getGeminiResponse(query: String = "", updateUI: Boolean = true, image: Bitmap? = null) {
-        if (model == null) return
         if (updateUI) {
             binding.geminiResponseText.text = "Processing..."
             binding.loading.show()
             binding.textView5.text = query
         }
         else binding.geminiResponseText.append("\nProcessing...")
+        if (binding.rideLayout.isVisible) binding.rideLayout.hide()
 
-        val content = Content("user", if (image != null) listOf(ImagePart(image)) else listOf(TextPart(query)))
-        lifecycleScope.launch(Dispatchers.Main) {
-            try {
-                val response = model!!.startChat(chatHistory).sendMessage(content)
-                val responseText = response.text?.removePrefix("```json")?.removeSuffix("```")?.trim() ?: ""
+        val parts = mutableListOf<Part>()
+        if (image != null) parts.add(ImagePart(image))
+        if (query.isNotBlank()) parts.add(TextPart(query))
+        val content = Content(role = "user", parts)
 
+        ai.sendMessage(content, object : AiCallback {
+            override fun onNormalResponse(message: String) {
                 binding.loading.hide(0)
+                binding.geminiResponseText.show()
+                binding.geminiResponseText.text = message
+                if (isAutoReadEnabled) speakResponse()
+            }
+
+            override fun onAgenticResponse(
+                message: String,
+                jsonObject: List<JSONObject>
+            ) {
+                binding.loading.hide(0)
+                binding.geminiResponseText.show()
+                binding.geminiResponseText.text = message.parseMarkdown()
+
                 pendingFormData = null
-                if (binding.rideLayout.isVisible) binding.rideLayout.hide()
-                try {
-                    if (responseText.startsWith("{") && responseText.endsWith("}")) {
-                        val jsonResponse = JSONObject(responseText)
-                        val message = if (jsonResponse.has("message")) jsonResponse.getString("message") else "Okay."
+                if (isAutoReadEnabled) speakResponse()
 
-                        after(1) {
-                            pendingFormData = jsonResponse
-                            loadPlatformWebsite(jsonResponse)
-                        }
-
-                        binding.geminiResponseText.text = message.parseMarkdown()
-                        if (isAutoReadEnabled) speakResponse()
-                    }
-                    else if (responseText.startsWith("[") && responseText.endsWith("]")) {
-                        val jsonArray = JSONArray(responseText)
-                        for (i in 0 until jsonArray.length()) {
-                            val jsonObject = jsonArray.getJSONObject(i)
-                            val message = if (jsonObject.has("message")) jsonObject.getString("message") else "Command $i processed..."
-
-                            after(1) { loadPlatformWebsite(jsonObject) }
-                            if (i == 0) binding.geminiResponseText.text = message
-                            else binding.geminiResponseText.append("\n$message")
-                        }
-                        if (isAutoReadEnabled) speakResponse()
-                    }
-                    else {
-                        binding.geminiResponseText.text = responseText.parseMarkdown()
-                        if (isAutoReadEnabled) speakResponse()
+                after(1) {
+                    jsonObject.forEach { json->
+                        loadPlatformWebsite(json)
                     }
                 }
-                catch (e: Exception) {
-                    toast(e.message)
-                    binding.geminiResponseText.text = responseText.parseMarkdown()
-
-                    if (binding.rideLayout.isVisible) binding.rideLayout.hide()
-                    if (isAutoReadEnabled) speakResponse()
-                }
-                
-                binding.geminiResponseText.show()
-                chatHistory.add(response.candidates.firstOrNull()?.content?: Content(role = "model", listOf(TextPart(response.text.toString()))))
-                chatHistory.add(content)
             }
-            catch (e: Exception) {
-                val errorMessage = e.message
 
-                binding.geminiResponseText.text = errorMessage
-                binding.geminiResponseText.show()
+            override fun onError(error: String) {
                 binding.loading.hide(0)
+                binding.geminiResponseText.show()
+                binding.geminiResponseText.text = error
             }
-        }
+        })
     }
 
     private fun speakResponse() {

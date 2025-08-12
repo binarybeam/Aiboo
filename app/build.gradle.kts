@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
 }
+
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+val apiKey = localProperties["MY_API_KEY"] as String
 
 android {
     namespace = "com.example.aibooo"
@@ -16,6 +23,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -64,9 +72,10 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.lottie)
 
-    implementation("androidx.camera:camera-core:1.3.1")
-    implementation("androidx.camera:camera-camera2:1.3.1")
-    implementation("androidx.camera:camera-lifecycle:1.3.1")
-    implementation("androidx.camera:camera-view:1.3.1")
-    implementation("com.github.binarybeam:Prexocore:1.1.0")
+    implementation("androidx.camera:camera-core:1.5.0-beta02")
+    implementation("androidx.camera:camera-camera2:1.5.0-beta02")
+    implementation("androidx.camera:camera-lifecycle:1.5.0-beta02")
+    implementation("androidx.camera:camera-view:1.5.0-beta02")
+    implementation("com.github.binarybeam:Prexo-Ai:1.1.0")
+    implementation("com.github.binarybeam:Prexocore:1.5.5")
 }
