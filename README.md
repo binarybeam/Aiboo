@@ -7,7 +7,7 @@
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 Aiboo can perform these tasks in the background after understanding your query:
 
@@ -26,7 +26,7 @@ Aiboo can perform these tasks in the background after understanding your query:
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 * **Input:** Voice or text query
 * **Agent Layer:** Aiboo interprets your intent and required details
@@ -42,7 +42,7 @@ Aiboo can perform these tasks in the background after understanding your query:
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### Requirements
 
@@ -66,7 +66,7 @@ Aiboo can perform these tasks in the background after understanding your query:
 
 ---
 
-## 🎤 Example Queries & Responses
+## Example Queries & Responses
 
 When you speak or type a command, Aiboo shows a **short message** on screen and performs the task in the background.
 
@@ -104,7 +104,7 @@ When you speak or type a command, Aiboo shows a **short message** on screen and 
 
 ---
 
-## 🔐 Permissions
+## Permissions
 
 Aiboo requests permissions only when required:
 
@@ -115,7 +115,7 @@ Aiboo requests permissions only when required:
 
 ---
 
-## 🔒 Security & Privacy
+## Security & Privacy
 
 * API key is **stored locally** only
 * No silent data upload
@@ -123,7 +123,7 @@ Aiboo requests permissions only when required:
 
 ---
 
-## 🤝 Contribution Guidelines
+## Contribution Guidelines
 
 1. Fork the repository
 2. Create a feature branch
@@ -132,7 +132,7 @@ Aiboo requests permissions only when required:
 
 ---
 
-## 📜 License
+## License
 
 Open-source under the **Apache-2.0 License**.
 
