@@ -20,7 +20,7 @@ Aiboo can perform these tasks in the background after understanding your query:
 * Perform quick actions (flashlight, volume, brightness, vibrate, etc.)
 * Set alarms and reminders
 * Delete, copy, move, and rename files
-* Analyse data like photos, contacts, SMS, call history, files, or calendar events
+* Analyse data like photos, contacts, SMS, transactions, call history, files, or calendar events (with consent)
 
 > All tasks are executed in the background automatically once Aiboo understands the command.
 
